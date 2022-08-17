@@ -1,0 +1,384 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Service Catalog: Virtual Labs with Windows Ondemand Instances.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+              {
+                  "Label": {
+                      "default": "Laboratory Configuration"
+                  },
+                  "Parameters": [
+                      "Quantity",
+                      "GuacamoleParent",
+                      "UserData"
+                  ]
+              },
+                {
+                    "Label": {
+                        "default": "General Configuration"
+                    },
+                    "Parameters": [
+                        "VPC",
+                        "KeyPair",
+                        "RemoteAccessCIDR"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Windows Instance Configuration"
+                    },
+                    "Parameters": [
+                        "InstanceType",
+                        "Subnet",
+                        "WindowsRDPPort",
+                        "LatestAmiId"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+
+                "Quantity": {
+                    "default": "Quantity of Virtual Labs Instances"
+                },
+                "GuacamoleParent": {
+                    "default": "Apache Guacamole Labs Parent"
+                },
+                "UserData": {
+                    "default": "UserData script file"
+                },
+                "KeyPair": {
+                    "default": "Key Pair"
+                },
+                "RemoteAccessCIDR": {
+                    "default": "Remote Access CIDR Block"
+                },
+                "InstanceType": {
+                    "default": "Instance Type"
+                },
+                "Subnet": {
+                    "default": "Subnet"
+                },
+                "WindowsRDPPort": {
+                    "default": "Windows RDP Port"
+                },
+                "LatestAmiId": {
+                    "default": "SSM key to the latest Amazon windows AMI"
+                }
+            }
+        }
+    },
+    "Parameters": {
+        "Quantity": {
+            "Type": "Number"
+        },
+        "GuacamoleParent": {
+            "Type": "Number",
+            "Description": "Enter Guacamole Connection Group ID",
+            "ConstraintDescription": "must be an number"
+        },
+        "VPC": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Description": "Select the VPC where the EC2 instances will be created",
+            "ConstraintDescription": "must be an existing VPC"
+        },
+        "Subnet": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "Select subnet for Windows Instance",
+            "ConstraintDescription": "must be an existing subnet"
+        },
+        "RemoteAccessCIDR": {
+            "Description": "CIDR block to allow access to windows instances",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "InstanceType": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t3.micro",
+            "Description": "Amazon EC2 Windows Instance Type",
+            "Type": "String"
+        },
+        "WindowsRDPPort": {
+            "Description": "Windows RDP Port Number",
+            "Type": "Number",
+            "Default": 3389,
+            "ConstraintDescription": "must be a number from 1024 to 65535"
+        },
+        "UserData": {
+          "Description": "Script to prepare instance lab",
+          "Type": "String",
+          "Default": "s3://firetvuserdatascripts/windows-user-data.sh"
+        },
+
+        "KeyPair": {
+            "Description": "Name of existing EC2 key pair for Windows Instances",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "LatestAmiId": {
+            "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+            "Default": "/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base"
+        }
+    },
+    "Resources": {
+        "InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
+                    "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+                    "arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser"
+                ],
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+
+        "RolePolicies": {
+          "Type": "AWS::IAM::Policy",
+          "Properties": {
+            "PolicyName": "S3ReadAccess",
+            "Roles": [
+              { "Ref": "InstanceRole" }
+            ],
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListBucket"
+                  ],
+                 "Resource": [
+                    "arn:aws:s3:::<s3-bucket-name>"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": [
+                     "arn:aws:s3:::firetvuserdatascripts/*"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+
+
+        "InstanceProfile": {
+          "Type": "AWS::IAM::InstanceProfile",
+          "Properties": {
+              "Path": "/",
+              "Roles": [
+                      {
+                          "Ref": "InstanceRole"
+                      }
+                  ]
+                }
+            },
+            "WindowsSecurityGroup": {
+                "Type": "AWS::EC2::SecurityGroup",
+                "Properties": {
+                    "GroupDescription": "Enables SSH Access to Windows EC2 Instance",
+                    "VpcId": {
+                        "Ref": "VPC"
+                    },
+                    "SecurityGroupIngress": [
+                        {
+                            "Description":"allow RDP",
+                            "IpProtocol": "tcp",
+                            "FromPort": {
+                                "Ref": "WindowsRDPPort"
+                            },
+                            "ToPort": {
+                                "Ref": "WindowsRDPPort"
+                            },
+                            "CidrIp": {
+                                "Ref": "RemoteAccessCIDR"
+                            }
+                        },
+                        {
+                            "Description":"allow icmp",
+                            "IpProtocol": "icmp",
+                            "FromPort": "-1",
+                            "ToPort": "-1",
+                            "CidrIp": {
+                                "Ref": "RemoteAccessCIDR"
+                            }
+                        }
+                    ],
+                    "SecurityGroupEgress":[
+                        {
+                            "Description":"allow all outgoing",
+                            "IpProtocol" : "-1",
+                            "CidrIp" : "0.0.0.0/0"
+                        }
+                    ]
+                }
+            },
+        "WindowsFleet": {
+          "Type": "AWS::EC2::EC2Fleet",
+          "Properties" : {
+            "Type": "instant",
+            "LaunchTemplateConfigs": [
+              { "LaunchTemplateSpecification" :
+                {
+                   "Version": "$Latest",
+                   "LaunchTemplateId": { "Ref": "WindowsInstance" }
+                }
+              }
+            ],
+            "TargetCapacitySpecification": {
+              "DefaultTargetCapacityType": "on-demand",
+              "OnDemandTargetCapacity": {"Ref": "Quantity"},
+              "TotalTargetCapacity": {"Ref": "Quantity"}
+            },
+            "TagSpecifications": [
+              {
+                "ResourceType" : "instance",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {"Fn::Sub":"Windows-${AWS::StackName}"}
+                    },
+                    {
+                      "Key": "Parent",
+                      "Value": {
+                        "Ref": "GuacamoleParent"
+                      }
+                    },
+                    {
+                        "Key": "Description",
+                        "Value": "Service-Catalog-EC2-Reference-Architecture"
+                    },
+                    {
+                        "Key": "ConnectionProtocol",
+                        "Value": "RDP"
+                    }
+              ]
+            }
+            ]
+          }
+        },
+
+        "WindowsInstance": {
+            "Type": "AWS::EC2::LaunchTemplate",
+            "Properties": {
+                "LaunchTemplateData": {
+                    "ImageId": { "Ref" : "LatestAmiId"},
+                    "InstanceType": {
+                        "Ref": "InstanceType"
+                    },
+                    "NetworkInterfaces": [
+                      {
+                        "DeviceIndex": 0,
+                        "SubnetId": {
+                          "Ref": "Subnet"
+                       },
+                       "Groups": [
+                           {
+                               "Ref": "WindowsSecurityGroup"
+                           }
+                       ]
+                     }
+                    ],
+                    "KeyName": {
+                        "Ref": "KeyPair"
+                    },
+                    "IamInstanceProfile": {
+                        "Arn": {"Fn::GetAtt" : ["InstanceProfile", "Arn"]}
+                    },
+                    "BlockDeviceMappings": [
+                        {
+                            "DeviceName": "/dev/xvdh",
+                            "Ebs": {
+                                "Encrypted": true,
+                                "VolumeSize": "50"
+                            }
+                        }
+                    ],
+                    "UserData": {
+                        "Fn::Base64": {
+                          "Fn::Join": [ "", [
+                            "<script>\n",
+                              "net user /add developer BRasil03)#\n",
+                              "net localgroup administrators developer /add\n",
+                            "</script>"
+                            ]]
+                          }
+                        }
+                    }
+            }
+        }
+    },
+    "Outputs": {
+        "TemplateID": {
+            "Value": "service-catalog-reference-architectures/sc-ec2-ra"
+        },
+        "AWSRegionName": {
+            "Value": {
+                "Ref": "AWS::Region"
+            }
+        },
+        "KeyPair": {
+            "Value": {
+                "Ref": "KeyPair"
+            }
+        },
+        "WindowsSSHPort": {
+            "Value": {
+                "Ref": "WindowsRDPPort"
+            }
+        },
+        "Subnet": {
+            "Value": {
+                "Ref": "Subnet"
+            }
+        },
+        "InstanceType": {
+            "Value": {
+                "Ref": "InstanceType"
+            }
+        },
+        "RemoteAccessCIDR": {
+            "Value": {
+                "Ref": "RemoteAccessCIDR"
+            }
+        },
+        "VPC": {
+            "Value": {
+                "Ref": "VPC"
+            }
+        }
+    }
+}
