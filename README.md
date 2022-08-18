@@ -21,12 +21,12 @@ You will need:
 ### Demo walkthrough
 
 1. Apache Guacamole setup:
-  a) install Guacamole in EC2 instances or ECS/Fargate containers
-  b) configure a domain or subdomain in the Route53 or your DNS 
-  c) configure the domain and validate in ACM - Amazon Certificate Manager
-  d) setup ALB to listen in 443 port and attach the Certificate from ACM
-  e) configure a target group point to Guacamole instances
-  f) create a Guacamole API user 
+  a) install Guacamole in EC2 instances or ECS/Fargate containers<br>
+  b) configure a domain or subdomain in the Route53 or your DNS <br>
+  c) configure the domain and validate in ACM - Amazon Certificate Manager<br>
+  d) setup ALB to listen in 443 port and attach the Certificate from ACM<br>
+  e) configure a target group point to Guacamole instances<br>
+  f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save Service Catalog Templates files and the Userdata scripts
 3. Run the solution cloudformation script
 4. Now just scheduele an Eventbridge Rule with a target to Lambda function
