@@ -28,7 +28,7 @@ You will need:
   e) configure a target group point to Guacamole instances<br>
   f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save Service Catalog Templates files and the Userdata scripts
-3. Run the solution cloudformation script
+3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts/vdi-automated-solution.yaml)
 4. Now just scheduele an Eventbridge Rule with a target to Lambda function
 
 
