@@ -1,11 +1,32 @@
-## My Project
+# AWS Integration for Apache Guacamole
 
-TODO: Fill this README out!
+This repository is a walk through of scripts that were made to quickly set up an automated VDI - Virtual Desktop Infrastructure - using the [Apache Guacamole](https://guacamole.apache.org/) using Amazon EC2 Spot Instances.
 
-Be sure to:
+## Requirements
 
-* Change the title in this README
-* Edit your repository description on GitHub
+This demo is configured to run in `sa-east-1`. If you need to run it in a different region, edit the `AWS_REGION` variable in all the scripts.
+
+You will need:
+
+- VPC with one public subnet and one or two private subnets, a NAT Gateway and/or Proxy or the AWS Network Firewall
+- Apache Guacamole installed
+- Guacamole API Credentials
+- S3 Bucket shared with the Organization or Account with the AWS Service Catalog Products
+- A domain or subdomain
+
+### Demo walkthrough
+
+1. Apache Guacamole Url and credentials;
+  a) install Guacamole in EC2 instances or ECS/Fargate containers
+  b) configure a domain or subdomain in the Route53 or your DNS 
+  c) configure the domain and validate in ACM - Amazon Certificate Manager
+  d) setup ALB to listen in 443 port and attach the Certificate from ACM
+  e) configure a target group point to Guacamole instances
+  f) create a Guacamole API user 
+2. Create S3 BUCKET to save Service Catalog Templates files and the Userdata scripts
+3. Run the solution cloudformation script
+4. Now just scheduele an Eventbridge Rule with a target to Lambda function
+
 
 ## Security
 
@@ -14,4 +35,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
-
