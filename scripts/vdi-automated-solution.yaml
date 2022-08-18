@@ -1,0 +1,1240 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: FTV VDI Solution Template
+
+Parameters:
+  GuacamoleHostname:
+    Type: String
+    Description: The Apache Guacamole API fully hostname with subdomain and domain eg. www.gucamoleserver.com
+
+  GuacamolePath:
+    Type: String
+    Description: Fill this param ONLY if have the Apache Guacamole relative URL eg. /guacamole
+
+  GuacamolePort:
+    Type: Number
+    Description: The Apache Guacamole port.
+    Default: 8080
+
+  GuacamoleUsername:
+    Type: String
+    Description: The Apache Guacamole API username.
+
+  GuacaApiPassword:
+    NoEcho: true
+    Type: String
+    MinLength: 8
+    MaxLength: 41
+    Description: The Apache Guacamole API Password.
+
+  # KmsMaterKeyId:
+  #   Type: String
+  #   Description: The KMS Master Key ID to encript the SNS content.
+  #   Default: ''
+
+  LinuxS3UrlTemplate:
+    Type: String
+    Description: The Linux CFN Template hosted in the S3.
+    Default: ''
+
+  WindowsS3UrlTemplate:
+    Type: String
+    Description: The Windows CFN Template hosted in the S3.
+    Default: ''
+
+Resources:
+
+# SSM Parameters Store
+  # Define Lambda Role
+  # SSMLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: secure-string-role
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: ["lambda.amazonaws.com"]
+  #           Action: ["sts:AssumeRole"]
+  #     Path: /
+  #     Policies:
+  #       - PolicyName: secure-string-policy
+  #         PolicyDocument:
+  #           Statement:
+  #             # Providing access to store parameter in store
+  #             - Effect: Allow
+  #               Action:
+  #                 - ssm:PutParameter
+  #                 - ssm:DeleteParameter
+  #               Resource: '*'
+  #             # Providing access to store logs in cloudwatch
+  #             - Effect: Allow
+  #               Action:
+  #                 - logs:CreateLogGroup
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource: '*'
+  #             # Proving access to use KMS keys.
+  #             - Effect: Allow
+  #               Action:
+  #                 - kms:Encrypt
+  #                 - kms:Decrypt
+  #                 - kms:ReEncrypt*
+  #                 - kms:GenerateDataKey*
+  #                 - kms:CreateGrant
+  #                 - kms:DescribeKey
+  #               Resource: '*'
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EventBridgeLambdaTargetRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ["lambda.amazonaws.com"]
+            Action: ["sts:AssumeRole"]
+      Path: /
+      Policies:
+        - PolicyName: EventBridgeLambdaTargetPolicy
+          PolicyDocument:
+            Statement:
+              # Providing access to store logs in cloudwatch
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - servicecatalog:ProvisionProduct
+                  - servicecatalog:SearchProducts
+                  - servicecatalog:UntagResource
+                  - servicecatalog:DescribeProvisioningParameters
+                  - servicecatalog:DescribeProductView
+                  - servicecatalog:TagResource
+                  - servicecatalog:ListTagsForResource
+                  - servicecatalog:TerminateProvisionedProduct
+                  - servicecatalog:GetProvisionedProductOutputs
+                  - servicecatalog:DescribeProduct
+                  - servicecatalog:ListPortfoliosForProduct
+                  - servicecatalog:DescribeProvisionedProduct
+                Resource: '*'
+
+  # LambdaFunction:
+  #   Type: AWS::Lambda::Function
+  #   DependsOn: LambdaRole
+  #   Properties:
+  #     Description: Storing secure string in Parameter
+  #     FunctionName: CreateSecureStringInParamterStore
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Timeout: 10
+  #     Handler: index.lambda_handler
+  #     Runtime: python3.8
+  #     Code:
+  #       ZipFile: |
+  #         import boto3
+  #         import json
+  #         import cfnresponse
+  #         import logging
+  #         logger = logging.getLogger()
+  #         def lambda_handler(event, context):
+  #           # Creating response object
+  #           response = {
+  #             'StackId': event['StackId'],
+  #             'RequestId': event['RequestId'],
+  #             'LogicalResourceId': event['LogicalResourceId'],
+  #             'Status': 'SUCCESS',
+  #             'Data': {}
+  #           }
+  #           # Read the values of the parameter we passed in. Comma Delimited List of
+  #           # ParameterKeys and ParameterValues and KmsKeyId need to be passed.
+  #           parameter_keys = event['ResourceProperties']['ParameterKeys']
+  #           parameter_values = event['ResourceProperties']['ParameterValues']
+  #           kms_key_id = event['ResourceProperties']['KmsKeyId']
+  #           parameter_key_list = parameter_keys.split(',')
+  #           parameter_value_list = parameter_values.split(',')
+  #           logger.debug(parameter_key_list)
+  #           logger.debug(parameter_value_list)
+  #           length = len(parameter_key_list)
+  #           i = 0
+  #           client = boto3.client('ssm')
+  #           # If request type is delete, delete the parameters
+  #           if event['RequestType'] == 'Delete':
+  #             try:
+  #               while i < length:
+  #                  ssm_response = client.delete_parameter(
+  #                       Name = parameter_key_list[i]
+  #                  )
+  #                  i += 1
+  #               cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
+  #             except client.exceptions.ParameterNotFound as e:
+  #               logging.warn("Parameter is not found.", exc_info=True)
+  #           try:
+  #             # For each parameter we passed in, create secure string parameter,
+  #             while i < length:
+  #                ssm_response = client.put_parameter(
+  #                     Name = parameter_key_list[i],
+  #                     Value=parameter_value_list[i],
+  #                     Type='SecureString',
+  #                     KeyId=kms_key_id,
+  #                     Tier='Standard',
+  #                     Overwrite=True
+  #                )
+  #                i += 1
+  #             cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
+  #           except Exception as e:
+  #             logging.error("Exception occurred", exc_info=True)
+  #             # Updating response statues and failed reason.
+  #             response['Status'] = 'FAILED'
+  #             response['Reason'] = 'Error in putting parameter'
+  #             cfnresponse.send(event, context, cfnresponse.FAILED, response, "CustomResourcePhysicalID")
+  # CreateSSMParams:
+  #   Type: 'Custom::CreateSSMParams'
+  #   Properties:
+  #     ServiceToken:
+  #       Fn::GetAtt:
+  #         - LambdaFunction
+  #         - Arn
+  #     KmsKeyId: 'alias/aws/ssm'
+  #     ParameterKeys: guacaApiPassword
+  #     ParameterValues: !Ref GuacaApiPassword
+#!Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm
+
+  # eventbridge
+  CreateGuacamoleConnectionEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: CreateGuacamoleConnection
+    Properties:
+      Description: "EventRule to create a connection on Guacamole when a new EC2 started"
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - "running"
+      State: "ENABLED"
+      Targets:
+        -
+          Arn:
+            Fn::GetAtt:
+              - CreateGuacamoleConnection
+              - Arn
+          Id: "CreateGuacamoleConnectionV1"
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: CreateGuacamoleConnection
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - CreateGuacamoleConnectionEventRule
+          - Arn
+
+  DeleteGuacamoleConnectionEventRule:
+    Type: AWS::Events::Rule
+    DependsOn: DeleteGuacamoleConnection
+    Properties:
+      Description: "EventRule to delete a connection on Guacamole when a new EC2 started"
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - "terminated"
+            - "stopping"
+      State: "ENABLED"
+      Targets:
+        -
+          Arn:
+            Fn::GetAtt:
+              - DeleteGuacamoleConnection
+              - Arn
+          Id: "DeleteGuacamoleConnectionV1"
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: DeleteGuacamoleConnection
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn:
+        Fn::GetAtt:
+          - DeleteGuacamoleConnectionEventRule
+          - Arn
+
+# lambdas
+  #createProductScheduledbyEventBridge
+  CreateProductScheduledbyEventBridge:
+    Type: AWS::Lambda::Function
+    DependsOn: LambdaRole
+    Properties:
+      FunctionName: CreateProductScheduledbyEventBridge
+      Description: A lambda function to be an Eventbridge scheduled rule target to create a Service Catalog products
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 10
+      Handler: index.create_instance_from_catalog
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import logging
+          logger = logging.getLogger()
+          def create_instance_from_catalog(event, context):
+              sc = boto3.client('servicecatalog')
+              logger.info(event)
+              guacamole_parent = event['GuacamoleParent']
+              quantity = event['Quantity']
+              user_data = event['UserData']
+              users = event['Users']
+              product_id = event['ProductId']
+              artifact_id = event['ArtifactId']
+              instance_type = event['InstanceType']
+              key_par = event['KeyPair']
+              remote_access_cidr = event['RemoteAccessCIDR']
+              vpc = event['VPC']
+              subnet = event['Subnet']
+              provisioned_product_name = event['ProvisionedProductName']
+
+              response = sc.provision_product(
+                  ProductId=product_id,
+                  ProvisionedProductName=provisioned_product_name,
+                  ProvisioningArtifactId=artifact_id,
+                  ProvisioningParameters=[
+                      {
+                          'Key': 'InstanceType',
+                          'Value': instance_type,
+                      },
+                      {
+                          'Key': 'Quantity',
+                          'Value': str(quantity),
+                      },
+                      {
+                          'Key': 'GuacamoleParent',
+                          'Value': str(guacamole_parent)
+                      },
+                      {
+                          'Key': 'UserData',
+                          'Value': user_data
+                      },
+                      {
+                          'Key': 'KeyPair',
+                          'Value': key_par
+                      },
+                      {
+                          'Key': 'RemoteAccessCIDR',
+                          'Value': remote_access_cidr
+                      },
+                      {
+                          'Key': 'VPC',
+                          'Value': vpc
+                      },
+                      {
+                          'Key': 'Subnet',
+                          'Value': subnet
+                      }
+
+                  ]
+              )
+              logger.info(response)
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps("ok")
+              }
+
+
+  #deleteProductScheduledbyEventBridge
+  DeleteProductScheduledbyEventBridge:
+    Type: AWS::Lambda::Function
+    DependsOn: LambdaRole
+    Properties:
+      FunctionName: DeleteProductScheduledbyEventBridge
+      Description: A lambda function to be an Eventbridge scheduled rule target to remove a Service Catalog products
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 10
+      Handler: index.terminate_instance_from_catalog
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          def terminate_instance_from_catalog(event, context):
+              sc = boto3.client('servicecatalog')
+              provisioned_product_name = event['ProvisionedProductName']
+              sc.terminate_provisioned_product(
+                  ProvisionedProductName=provisioned_product_name,
+                  TerminateToken='terminate',
+                  IgnoreErrors=True
+              )
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('OK')
+              }
+
+  #createUsers
+  CreateGuacamoleUsers:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          hostname: !Ref GuacamoleHostname
+          port: !Ref GuacamolePort
+          path: !Ref GuacamolePath
+          username: !Ref GuacamoleUsername
+          password: guacaApiPassword
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+      Runtime: nodejs14.x
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const ssm = new AWS.SSM();
+          const https = require('https');
+          const querystring = require('querystring');
+          var username = process.env.username;
+          var password = '';
+          var guacaSession = '';
+          var parent = '';
+          var result = '';
+
+          function getCredentials() {
+              var params = {
+                Name: process.env.password,
+                WithDecryption: true
+              };
+              return new Promise((resolve) => {
+                ssm.getParameter(params, function(err, data) {
+                  if (err) {
+                    console.log(err, err.stack);
+                  } else {
+                    password = data.Parameter.Value;
+                    resolve(password);
+                  }
+                }
+               );
+              }
+              );
+          }
+
+          function getToken(passwd) {
+            const body = querystring.stringify({
+                username: username,
+                password: passwd,
+              });
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/tokens',
+                method: 'POST',
+                port: process.env.port,
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Content-Length': body.length,
+                }
+              };
+
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                res.setEncoding('utf8');
+                let rawData = '';
+
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(rawData));
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              req.write(body);
+              req.end();
+            });
+          }
+
+          function createUsers(user) {
+              var body =
+                  {
+                      "username": user,
+                      "password": user,
+                      "attributes": {
+                          "disabled": "false",
+                          "expired": "true",
+                          "access-window-start": "",
+                          "access-window-end": "",
+                          "valid-from": "",
+                          "valid-until": "",
+                          "timezone": null,
+                          "guac-full-name": user,
+                          "guac-organization": "",
+                          "guac-organizational-role": ""
+                      }
+                  };
+
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/session/data/'+ guacaSession.dataSource +'/users?token=' + guacaSession.authToken,
+                method: 'POST',
+                port: process.env.port,
+                 headers: {
+                   'Content-Type': 'application/json',
+                   'Content-Length': JSON.stringify(body).length,
+                 }
+              };
+              console.log(options)
+
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                let rawData = '';
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(rawData));
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              req.write(JSON.stringify(body));
+              req.end();
+            });
+          }
+
+          exports.handler = async event => {
+
+            try {
+              console.log(event);
+              await getCredentials();
+              guacaSession = await getToken(password);
+
+              for(var i in event.detail["userList"]) {
+                  response = await createUsers(i);
+                  result = result + '\n' + response;
+              }
+
+              console.log(result);
+
+             return {
+               statusCode: 200,
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify(result),
+             };
+
+            } catch (error) {
+              console.log('Error is:️', error);
+               return {
+                 statusCode: 400,
+                 body: error.message,
+               };
+            }
+          };
+
+  #createConnection
+  CreateGuacamoleConnection:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          hostname: !Ref GuacamoleHostname
+          port: !Ref GuacamolePort
+          path: !Ref GuacamolePath
+          username: !Ref GuacamoleUsername
+          password: guacaApiPassword
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+      Runtime: nodejs14.x
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const ssm = new AWS.SSM();
+          const ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+          const https = require('https');
+          const querystring = require('querystring');
+          var username = process.env.username;
+          var password = '';
+          var guacaSession = '';
+          var instanceId = '';
+          var instanceTags = '';
+          var instanceDetails = '';
+          var instanceName = '';
+          var parent = '';
+          var connectionType = '';
+          var result = '';
+
+          function getInstanceDetails() {
+               var params = {
+                  InstanceIds: [
+                    instanceId
+                  ]
+                };
+                return new Promise((resolve) => {
+                  ec2.describeInstances(params, function(err, data) {
+                  if (err) {
+                     console.log(err, err.stack);
+                  } else {
+                    //console.log(JSON.stringify(data));
+                    resolve(data.Reservations[0].Instances[0]);
+                  }
+                  });
+                });
+          }
+
+          function setIdentifier(id) {
+               var params = {
+                 Resources: [
+                   instanceId
+                 ],
+                 Tags: [{
+                   Key: "Identifier",
+                   Value: id
+                 }]
+               };
+               return new Promise((resolve) => {
+                 ec2.createTags(params, function(err, data) {
+                   if (err) {
+                     console.log(err, err.stack);
+                   }
+                   else {
+                     console.log(data);
+                     resolve(id);
+                   }
+                 });
+               });
+          }
+
+          function getCredentials() {
+              var params = {
+                Name: process.env.password,
+                WithDecryption: true
+              };
+              return new Promise((resolve) => {
+                ssm.getParameter(params, function(err, data) {
+                  if (err) {
+                    console.log(err, err.stack);
+                  } else {
+                    password = data.Parameter.Value;
+                    resolve(password);
+                  }
+                }
+               );
+              }
+              );
+          }
+
+          function getToken(passwd) {
+            const body = querystring.stringify({
+                username: username,
+                password: passwd,
+              });
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/tokens',
+                method: 'POST',
+                port: process.env.port,
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Content-Length': body.length,
+                }
+              };
+
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                res.setEncoding('utf8');
+                let rawData = '';
+
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(rawData));
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              req.write(body);
+              req.end();
+            });
+          }
+
+          function createConnection(type) {
+            if(type == 'VNC') {
+              var body = {
+                  "parentIdentifier": parent,
+                  "name": instanceName + " - " + instanceId,
+                  "protocol": "vnc",
+                  "parameters": {
+                      "port": "5901",
+                      "cursor": "Local",
+                      "enable-sftp": "false",
+                      "password": password,
+                      "hostname": instanceDetails.PrivateIpAddress
+                  },
+                  "attributes": {
+                      "max-connections": "1",
+                      "max-connections-per-user": "1",
+                  }
+                };
+            } else {
+              var body = {
+                  "parentIdentifier": parent,
+                  "name": instanceName + " - " + instanceId,
+                  "protocol": "rdp",
+                  "parameters": {
+                      "port": "3389",
+                      "cursor": "Local",
+                      "enable-sftp": "false",
+                      "username": "developer",
+                      "password": password,
+                      "hostname": instanceDetails.PrivateIpAddress,
+                      "ignore-cert": "true",
+                      "width": "1280",
+                      "height": "720",
+                      "security": "Any"
+                  },
+                  "attributes": {
+                      "max-connections": "1",
+                      "max-connections-per-user": "1",
+                  }
+                };
+            }
+
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/session/data/'+ guacaSession.dataSource +'/connections?token=' + guacaSession.authToken,
+                method: 'POST',
+                port: process.env.port,
+                 headers: {
+                   'Content-Type': 'application/json',
+                   'Content-Length': JSON.stringify(body).length,
+                 }
+              };
+              console.log(options)
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                let rawData = '';
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(rawData));
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              req.write(JSON.stringify(body));
+              req.end();
+            });
+          }
+
+          exports.handler = async event => {
+
+            try {
+              console.log(event.detail["instance-id"]);
+
+              instanceId = event.detail["instance-id"];
+              await getCredentials();
+              guacaSession = await getToken(password);
+              instanceDetails = await getInstanceDetails();
+
+              console.log(instanceDetails.Tags);
+              instanceTags = instanceDetails.Tags;
+              for(var i in instanceTags) {
+                if (instanceTags[i].Key == 'Name') {
+                   instanceName = instanceTags[i].Value;
+                }
+                if (instanceTags[i].Key == 'Parent') {
+                   if(instanceTags[i].Value == 'ROOT') {
+                      parent = 'ROOT';
+                   } else {
+                      parent = instanceTags[i].Value;
+                   }
+                }
+                if (instanceTags[i].Key == 'ConnectionProtocol') {
+                    connectionType = instanceTags[i].Value;
+                }
+              }
+
+              result = await createConnection(connectionType);
+              console.log(result);
+              await setIdentifier(result.identifier);
+
+             return {
+               statusCode: 200,
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify(result),
+             };
+
+            } catch (error) {
+              console.log('Error is:️', error);
+               return {
+                 statusCode: 400,
+                 body: error.message,
+               };
+            }
+          };
+  #deleteConnection
+  DeleteGuacamoleConnection:
+    Type: AWS::Lambda::Function
+    Properties:
+      Environment:
+        Variables:
+          hostname: !Ref GuacamoleHostname
+          port: !Ref GuacamolePort
+          path: !Ref GuacamolePath
+          username: !Ref GuacamoleUsername
+          password: guacaApiPassword
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+      Runtime: nodejs14.x
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const ssm = new AWS.SSM();
+          const ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
+          const https = require('https');
+          const querystring = require('querystring');
+          var username = process.env.username;
+          var password = '';
+          var guacaSession = '';
+          var instanceId = '';
+          var instanceTags = '';
+          var instanceDetails = '';
+          var identifier = '';
+
+          function getInstanceDetails() {
+               var params = {
+                  InstanceIds: [
+                    instanceId
+                  ]
+                };
+
+                return new Promise((resolve) => {
+                  ec2.describeInstances(params, function(err, data) {
+                  if (err) {
+                     console.log(err, err.stack);
+                  } else {
+                    //console.log(JSON.stringify(data));
+                    resolve(data.Reservations[0].Instances[0]);
+                  }
+
+                  });
+                });
+          }
+
+          function getCredentials() {
+              var params = {
+                Name: process.env.password,
+                WithDecryption: true
+              };
+              return new Promise((resolve) => {
+                ssm.getParameter(params, function(err, data) {
+                  if (err) {
+                    console.log(err, err.stack);
+                  } else {
+                    password = data.Parameter.Value;
+                    resolve(password);
+                  }
+                }
+               );
+              }
+              );
+          }
+          function getToken(passwd) {
+            const body = querystring.stringify({
+                username: username,
+                password: passwd,
+              });
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/tokens',
+                method: 'POST',
+                port: process.env.port,
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Content-Length': body.length,
+                }
+              };
+
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                res.setEncoding('utf8');
+                let rawData = '';
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+                res.on('end', () => {
+                  try {
+                    resolve(JSON.parse(rawData));
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              req.write(body);
+              req.end();
+            });
+          }
+          function deleteVncConnection() {
+            const body = querystring.stringify({
+                token: guacaSession.authToken,
+              });
+            const options = {
+                hostname: process.env.hostname,
+                path: process.env.path + '/api/session/data/'+ guacaSession.dataSource +'/connections/' + identifier + '?token=' + guacaSession.authToken,
+                method: 'DELETE',
+                port: process.env.port
+              };
+            return new Promise((resolve, reject) => {
+              const req = https.request(options, res => {
+                let rawData = '';
+                res.on('data', chunk => {
+                  rawData += chunk;
+                });
+                res.on('end', () => {
+                  try {
+                    resolve(rawData);
+                  } catch (err) {
+                    reject(new Error(err));
+                  }
+                });
+              });
+              req.on('error', err => {
+                reject(new Error(err));
+              });
+              // write the body to the Request object
+              req.write(JSON.stringify(body));
+              req.end();
+            });
+          }
+          exports.handler = async event => {
+            try {
+              console.log(event.detail["instance-id"]);
+              instanceId = event.detail["instance-id"];
+              await getCredentials();
+              guacaSession = await getToken(password);
+              instanceDetails = await getInstanceDetails();
+              console.log(instanceDetails.Tags[0].Value);
+              instanceTags = instanceDetails.Tags;
+              for(var i in instanceTags) {
+                if (instanceTags[i].Key == 'Identifier') {
+                   identifier = instanceTags[i].Value;
+                }
+              }
+              const result = await deleteVncConnection();
+              return {
+               statusCode: 200,
+               headers: {'Content-Type': 'application/json'},
+               body: JSON.stringify(result),
+              };
+            } catch (error) {
+              console.log('Error is:️', error);
+               return {
+                 statusCode: 400,
+                 body: error.message,
+               };
+            }
+          };
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+              - Action:
+                - 'ec2:Describe*'
+                - 'ec2:DeleteTags'
+                - 'ec2:CreateTags'
+                Resource: '*'
+                Effect: Allow
+              - Action:
+                - 'kms:Get*'
+                - 'kms:List*'
+                Resource:
+                  - '*'
+                Effect: Allow
+              - Action:
+                - 'ssm:Describe*'
+                - 'ssm:Get*'
+                - 'ssm:List*'
+                Resource: '*'
+                Effect: Allow
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+
+#S3 scripts buckets
+
+
+#ServiceCatalog portfolio creation
+  BaselinePortfolio:
+    Type: "AWS::ServiceCatalog::Portfolio"
+    Properties:
+      DisplayName: "BaselinePortfolio"
+      AcceptLanguage: "en"
+      Description: "A portfolio of self-service AWS products to run in the FireTV E-learning solution."
+      ProviderName: "IT"
+
+#products creation
+# you can find samples templates on https://github.com/aws-samples/aws-service-catalog-reference-architectures
+
+  EC2LinuxProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      AcceptLanguage: "en"
+      Description: "This product builds one Amazon Linux EC2 instance and create a SSM patch baseline, maintenance window, and patch task to scan for and install operating system updates the EC2 instance."
+      Distributor: "Amazon"
+      Name: "Amazon Elastic Compute Cloud (EC2) Linux"
+      Owner: "IT Services"
+      SupportEmail: "support@octank.edu.br"
+      SupportUrl: "https://www.amazon.com"
+      SupportDescription: "Support Description"
+      ProvisioningArtifactParameters:
+      -
+        Description: "Linux EC2 Instance"
+        Name: "Linux EC2 Instance"
+        Info:
+          LoadTemplateFromURL : !Ref LinuxS3UrlTemplate
+
+  LinuxAssociation:
+    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
+    Properties:
+      ProductId: !Ref EC2LinuxProduct
+      PortfolioId: !Ref BaselinePortfolio
+
+
+  EC2WindowsProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      AcceptLanguage: "en"
+      Description: "This product builds one Amazon Windows EC2 instance and create a SSM patch baseline, maintenance window, and patch task to scan for and install operating system updates the EC2 instance."
+      Distributor: "Amazon"
+      Name: "Amazon Elastic Compute Cloud (EC2) Windows"
+      Owner: "IT Services"
+      SupportEmail: "support@bunge.com"
+      SupportUrl: "https://www.amazon.com"
+      SupportDescription: "Support Description"
+      ProvisioningArtifactParameters:
+      -
+        Description: "Windows EC2 Instance"
+        Name: "Windows EC2 Instance"
+        Info:
+          LoadTemplateFromURL : !Ref WindowsS3UrlTemplate
+
+  WindowsAssociation:
+    Type: "AWS::ServiceCatalog::PortfolioProductAssociation"
+    Properties:
+      ProductId: !Ref EC2WindowsProduct
+      PortfolioId: !Ref BaselinePortfolio
+
+# IAM group with access on portfolio to run the products provisioning
+  EngineeringGroup:
+    Type: "AWS::IAM::Group"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess
+
+  BaselinePortfolioPrincipalAssociation:
+    Type: "AWS::ServiceCatalog::PortfolioPrincipalAssociation"
+    Properties:
+      PortfolioId: !Ref BaselinePortfolio
+      PrincipalARN: !GetAtt EngineeringGroup.Arn
+      PrincipalType: "IAM"
+
+  LambdaPortfolioPrincipalAssociation:
+    Type: "AWS::ServiceCatalog::PortfolioPrincipalAssociation"
+    Properties:
+      PortfolioId: !Ref BaselinePortfolio
+      PrincipalARN: !GetAtt LambdaRole.Arn
+      PrincipalType: "IAM"
+
+  LinuxInstaceTypeTagOption:
+    Type: "AWS::ServiceCatalog::TagOption"
+    Properties:
+      Key: "InstanceType"
+      Value: "Linux"
+
+  WindowsInstanceTypeOption:
+    Type: "AWS::ServiceCatalog::TagOption"
+    Properties:
+      Key: "InstanceType"
+      Value: "Windows"
+
+  LinuxInstaceTypeTagOptionAssociation:
+    Type: "AWS::ServiceCatalog::TagOptionAssociation"
+    Properties:
+      ResourceId: !Ref EC2LinuxProduct
+      TagOptionId: !Ref LinuxInstaceTypeTagOption
+
+  WindowsInstaceTypeTagOptionAssociation:
+    Type: "AWS::ServiceCatalog::TagOptionAssociation"
+    Properties:
+      ResourceId: !Ref EC2WindowsProduct
+      TagOptionId: !Ref WindowsInstanceTypeOption
+
+#Prducts constraints association
+  LinuxLaunchConstraint:
+    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
+    Properties:
+      Description: "Allows the product to launch with the policies granted by the associated role."
+      PortfolioId: !Ref BaselinePortfolio
+      ProductId: !Ref EC2LinuxProduct
+      RoleArn: !GetAtt LaunchConstraintRole.Arn
+    DependsOn: LinuxAssociation
+
+  WindowsLaunchConstraint:
+    Type: "AWS::ServiceCatalog::LaunchRoleConstraint"
+    Properties:
+      Description: "Allows the product to launch with the policies granted by the associated role."
+      PortfolioId: !Ref BaselinePortfolio
+      ProductId: !Ref EC2WindowsProduct
+      RoleArn: !GetAtt LaunchConstraintRole.Arn
+    DependsOn: WindowsAssociation
+
+#constraint role with SC permission to provisioning AWS services
+  LaunchConstraintRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "servicecatalog.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "AllowProductLaunch"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: '*'
+                Effect: "Allow"
+                Action: '*'
+                  # Permissions required for the provisioning the products
+              - Resource:
+                  - "arn:aws:cloudformation:*:*:stack/SC-*"
+                  - "arn:aws:cloudformation:*:*:changeSet/SC-*"
+                Effect: "Allow"
+                Action:
+                  # Permissions required by AWS Service Catalog to create stack
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStacks
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:UpdateStack
+              - Resource: !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${EngineeringCreatedTopic.TopicName}"
+                Effect: "Allow"
+                Action:
+                  - sns:Publish
+
+  EngineeringCreatedTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: "Engineering Product Created"
+##      KmsMasterKeyId: !Ref KmsMaterKeyId
+
+  EngineeringSubscription:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      Endpoint: "scandura+infra@amazon.com"
+      Protocol: "email"
+      TopicArn: !Ref EngineeringCreatedTopic
+  LinuxCreatedLaunchNotification:
+    Type: "AWS::ServiceCatalog::LaunchNotificationConstraint"
+    Properties:
+      Description: "Publishes notifications when a Linux Product is provisioned."
+      NotificationArns:
+        - !Ref EngineeringCreatedTopic
+      PortfolioId: !Ref BaselinePortfolio
+      ProductId: !Ref EC2LinuxProduct
+    DependsOn: LinuxAssociation
+
+  WindowsCreatedLaunchNotification:
+    Type: "AWS::ServiceCatalog::LaunchNotificationConstraint"
+    Properties:
+      Description: "Publishes notifications when a Windows Product is provisioned."
+      NotificationArns:
+        - !Ref EngineeringCreatedTopic
+      PortfolioId: !Ref BaselinePortfolio
+      ProductId: !Ref EC2WindowsProduct
+    DependsOn: WindowsAssociation
+Outputs:
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-stack-name'
+
+  # LambdaFunctionArn:
+  #   Description: 'Lambda Function Arn'
+  #   Value: !GetAtt LambdaFunction.Arn
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-LambdaFunctionArn'
+
+  # LambdaRoleArn:
+  #   Description: 'Lambda Role Arn'
+  #   Value: !GetAtt LambdaRole.Arn
+  #   Export:
+  #     Name: !Sub '${AWS::StackName}-LambdaRoleArn'
