@@ -26,11 +26,6 @@ Parameters:
     MaxLength: 41
     Description: The Apache Guacamole API Password.
 
-  # KmsMaterKeyId:
-  #   Type: String
-  #   Description: The KMS Master Key ID to encript the SNS content.
-  #   Default: ''
-
   LinuxS3UrlTemplate:
     Type: String
     Description: The Linux CFN Template hosted in the S3.
@@ -42,48 +37,6 @@ Parameters:
     Default: ''
 
 Resources:
-
-# SSM Parameters Store
-  # Define Lambda Role
-  # SSMLambdaRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     RoleName: secure-string-role
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service: ["lambda.amazonaws.com"]
-  #           Action: ["sts:AssumeRole"]
-  #     Path: /
-  #     Policies:
-  #       - PolicyName: secure-string-policy
-  #         PolicyDocument:
-  #           Statement:
-  #             # Providing access to store parameter in store
-  #             - Effect: Allow
-  #               Action:
-  #                 - ssm:PutParameter
-  #                 - ssm:DeleteParameter
-  #               Resource: '*'
-  #             # Providing access to store logs in cloudwatch
-  #             - Effect: Allow
-  #               Action:
-  #                 - logs:CreateLogGroup
-  #                 - logs:CreateLogStream
-  #                 - logs:PutLogEvents
-  #               Resource: '*'
-  #             # Proving access to use KMS keys.
-  #             - Effect: Allow
-  #               Action:
-  #                 - kms:Encrypt
-  #                 - kms:Decrypt
-  #                 - kms:ReEncrypt*
-  #                 - kms:GenerateDataKey*
-  #                 - kms:CreateGrant
-  #                 - kms:DescribeKey
-  #               Resource: '*'
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -121,85 +74,6 @@ Resources:
                   - servicecatalog:DescribeProvisionedProduct
                 Resource: '*'
 
-  # LambdaFunction:
-  #   Type: AWS::Lambda::Function
-  #   DependsOn: LambdaRole
-  #   Properties:
-  #     Description: Storing secure string in Parameter
-  #     FunctionName: CreateSecureStringInParamterStore
-  #     Role: !GetAtt LambdaRole.Arn
-  #     Timeout: 10
-  #     Handler: index.lambda_handler
-  #     Runtime: python3.8
-  #     Code:
-  #       ZipFile: |
-  #         import boto3
-  #         import json
-  #         import cfnresponse
-  #         import logging
-  #         logger = logging.getLogger()
-  #         def lambda_handler(event, context):
-  #           # Creating response object
-  #           response = {
-  #             'StackId': event['StackId'],
-  #             'RequestId': event['RequestId'],
-  #             'LogicalResourceId': event['LogicalResourceId'],
-  #             'Status': 'SUCCESS',
-  #             'Data': {}
-  #           }
-  #           # Read the values of the parameter we passed in. Comma Delimited List of
-  #           # ParameterKeys and ParameterValues and KmsKeyId need to be passed.
-  #           parameter_keys = event['ResourceProperties']['ParameterKeys']
-  #           parameter_values = event['ResourceProperties']['ParameterValues']
-  #           kms_key_id = event['ResourceProperties']['KmsKeyId']
-  #           parameter_key_list = parameter_keys.split(',')
-  #           parameter_value_list = parameter_values.split(',')
-  #           logger.debug(parameter_key_list)
-  #           logger.debug(parameter_value_list)
-  #           length = len(parameter_key_list)
-  #           i = 0
-  #           client = boto3.client('ssm')
-  #           # If request type is delete, delete the parameters
-  #           if event['RequestType'] == 'Delete':
-  #             try:
-  #               while i < length:
-  #                  ssm_response = client.delete_parameter(
-  #                       Name = parameter_key_list[i]
-  #                  )
-  #                  i += 1
-  #               cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
-  #             except client.exceptions.ParameterNotFound as e:
-  #               logging.warn("Parameter is not found.", exc_info=True)
-  #           try:
-  #             # For each parameter we passed in, create secure string parameter,
-  #             while i < length:
-  #                ssm_response = client.put_parameter(
-  #                     Name = parameter_key_list[i],
-  #                     Value=parameter_value_list[i],
-  #                     Type='SecureString',
-  #                     KeyId=kms_key_id,
-  #                     Tier='Standard',
-  #                     Overwrite=True
-  #                )
-  #                i += 1
-  #             cfnresponse.send(event, context, cfnresponse.SUCCESS, response, "CustomResourcePhysicalID")
-  #           except Exception as e:
-  #             logging.error("Exception occurred", exc_info=True)
-  #             # Updating response statues and failed reason.
-  #             response['Status'] = 'FAILED'
-  #             response['Reason'] = 'Error in putting parameter'
-  #             cfnresponse.send(event, context, cfnresponse.FAILED, response, "CustomResourcePhysicalID")
-  # CreateSSMParams:
-  #   Type: 'Custom::CreateSSMParams'
-  #   Properties:
-  #     ServiceToken:
-  #       Fn::GetAtt:
-  #         - LambdaFunction
-  #         - Arn
-  #     KmsKeyId: 'alias/aws/ssm'
-  #     ParameterKeys: guacaApiPassword
-  #     ParameterValues: !Ref GuacaApiPassword
-#!Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm
 
   # eventbridge
   CreateGuacamoleConnectionEventRule:
@@ -1226,15 +1100,3 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
     Export:
       Name: !Sub '${AWS::StackName}-stack-name'
-
-  # LambdaFunctionArn:
-  #   Description: 'Lambda Function Arn'
-  #   Value: !GetAtt LambdaFunction.Arn
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-LambdaFunctionArn'
-
-  # LambdaRoleArn:
-  #   Description: 'Lambda Role Arn'
-  #   Value: !GetAtt LambdaRole.Arn
-  #   Export:
-  #     Name: !Sub '${AWS::StackName}-LambdaRoleArn'
