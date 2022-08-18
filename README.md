@@ -20,16 +20,16 @@ You will need:
 
 ### Demo walkthrough
 
-1. Apache Guacamole setup:
+1. Apache Guacamole setup:<br>
   a) install Guacamole in EC2 instances or ECS/Fargate containers<br>
   b) configure a domain or subdomain in the Route53 or your DNS <br>
   c) configure the domain and validate in ACM - Amazon Certificate Manager<br>
   d) setup ALB to listen in 443 port and attach the Certificate from ACM<br>
   e) configure a target group point to Guacamole instances<br>
   f) create a Guacamole API user <br>
-2. Create S3 BUCKET to save Service Catalog Templates files and the Userdata scripts
+2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
 3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts/vdi-automated-solution.yaml)
-4. Now just scheduele an Eventbridge Rule with a target to Lambda function
+4. Now just scheduele an Eventbridge Rule with a target to Lambdas functions to Add and Remove EC2 instances, see a [sample here](eventbridge-integration) 
 
 
 ## Security
