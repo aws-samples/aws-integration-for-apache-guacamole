@@ -3,7 +3,7 @@
 This repository is a walk through of scripts that were made to quickly set up an automated VDI - Virtual Desktop Infrastructure - using the [Apache Guacamole](https://guacamole.apache.org/) using Amazon EC2 Spot Instances.
 
 <p align="center">
-<img src="/images/EAD-FireTV-blogpost" width="550">
+<img src="/images/EAD-FireTV-blogpost.png" width="550">
 </p>
 
 ## Requirements
