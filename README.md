@@ -2,6 +2,10 @@
 
 This repository is a walk through of scripts that were made to quickly set up an automated VDI - Virtual Desktop Infrastructure - using the [Apache Guacamole](https://guacamole.apache.org/) using Amazon EC2 Spot Instances.
 
+<p align="center">
+<img src="/images/EAD-FireTV-blogpost" width="550">
+</p>
+
 ## Requirements
 
 This demo is configured to run in `sa-east-1`. If you need to run it in a different region, edit the `AWS_REGION` variable in all the scripts.
@@ -16,7 +20,7 @@ You will need:
 
 ### Demo walkthrough
 
-1. Apache Guacamole Url and credentials;
+1. Apache Guacamole setup:
   a) install Guacamole in EC2 instances or ECS/Fargate containers
   b) configure a domain or subdomain in the Route53 or your DNS 
   c) configure the domain and validate in ACM - Amazon Certificate Manager
