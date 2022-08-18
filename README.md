@@ -2,6 +2,8 @@
 
 This repository is a walk through of scripts that were made to quickly set up an automated VDI - Virtual Desktop Infrastructure - using the [Apache Guacamole](https://guacamole.apache.org/) using Amazon EC2 Spot Instances.
 
+This sample is a AWS automation to integrate with Apache Guacamole using Eventbridge Rules and Lambda Functions to detect EC2 events in the VPC and create or remove connections in the Guacamole 
+
 <p align="center">
 <img src="/images/EAD-FireTV-blogpost.png" width="550">
 </p>
@@ -29,7 +31,7 @@ You will need:
   f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
 3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
-4. Now just scheduele an Eventbridge Rule with a target to Lambdas functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
+4. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
 
 ## Security
