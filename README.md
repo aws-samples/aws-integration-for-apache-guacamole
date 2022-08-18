@@ -29,7 +29,7 @@ You will need:
   f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
 3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
-4. Now just scheduele an Eventbridge Rule with a target to Lambdas functions to Add and Remove EC2 instances, see a [sample here](eventbridge-integration) 
+4. Now just scheduele an Eventbridge Rule with a target to Lambdas functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
 
 ## Security
