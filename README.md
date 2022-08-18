@@ -28,7 +28,7 @@ You will need:
   e) configure a target group point to Guacamole instances<br>
   f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
-3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts/vdi-automated-solution.yaml)
+3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
 4. Now just scheduele an Eventbridge Rule with a target to Lambdas functions to Add and Remove EC2 instances, see a [sample here](eventbridge-integration) 
 
 
