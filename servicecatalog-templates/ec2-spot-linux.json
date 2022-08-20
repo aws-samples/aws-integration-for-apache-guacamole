@@ -57,6 +57,22 @@
                 "InstanceType": {
                     "default": "Instance Type"
                 },
+                "InstanceOverride1": {
+                    "default": "Instance Type"
+                },
+                "InstanceOverride2": {
+                    "default": "Instance Type"
+                },
+                "InstanceOverride3": {
+                    "default": "Instance Type"
+                },
+                "InstanceOverride4": {
+                    "default": "Instance Type"
+                },
+                "InstanceOverride5": {
+                    "default": "Instance Type"
+                },
+
                 "Subnet": {
                     "default": "Subnet"
                 },
@@ -116,6 +132,96 @@
             ],
             "Default": "t3.micro",
             "Description": "Amazon EC2 Linux Instance Type",
+            "Type": "String"
+        },
+        "InstanceOverride1": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t3.micro",
+            "Description": "Amazon EC2 Linux Instance Type",
+            "Type": "String"
+        },
+        "InstanceOverride2": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t2.medium",
+            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Type": "String"
+        },
+        "InstanceOverride3": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t3.medium",
+            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Type": "String"
+        },
+        "InstanceOverride4": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t2.large",
+            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Type": "String"
+        },
+        "InstanceOverride5": {
+            "AllowedValues": [
+                "t3.nano",
+                "t3.micro",
+                "t3.small",
+                "t3.medium",
+                "t3.large",
+                "t2.nano",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "g4dn.xlarge"
+            ],
+            "Default": "t3.large",
+            "Description": "Amazon EC2 Spot Linux Instance Type Override",
             "Type": "String"
         },
         "LinuxSSHPort": {
@@ -288,23 +394,23 @@
                 },
                 "Overrides":[
                     {
-                       "InstanceType":"t3.large",
+                       "InstanceType": { "Ref": "InstanceOverride5" },
                        "Priority": 5.0
                     },
                     {
-                       "InstanceType":"t2.large",
+                       "InstanceType": { "Ref": "InstanceOverride4" },
                        "Priority": 4.0
                     },
                     {
-                       "InstanceType":"t2.medium",
+                       "InstanceType": { "Ref": "InstanceOverride3" },
                        "Priority": 3.0
                     },
                     {
-                       "InstanceType":"t3.medium",
+                       "InstanceType": { "Ref": "InstanceOverride2" },
                        "Priority": 2.0
                     },
                     {
-                       "InstanceType":"t3.micro",
+                       "InstanceType": { "Ref": "InstanceOverride1" },
                        "Priority": 1.0
                     }
                   ]
