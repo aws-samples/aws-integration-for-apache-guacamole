@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Service Catalog: Virtual Labs with Linux Ondemand Instances.",
+    "Description": "Service Catalog: Virtual Labs with Windows Ondemand Instances.",
     "Metadata": {
         "AWS::CloudFormation::Interface": {
             "ParameterGroups": [
@@ -27,13 +27,12 @@
                 },
                 {
                     "Label": {
-                        "default": "Linux Instance Configuration"
+                        "default": "Windows Instance Configuration"
                     },
                     "Parameters": [
                         "InstanceType",
                         "Subnet",
-                        "LinuxSSHPort",
-                        "LinuxVNCPort",
+                        "WindowsRDPPort",
                         "LatestAmiId"
                     ]
                 }
@@ -76,18 +75,14 @@
                 "InstanceOverride5": {
                     "default": "Instance Type"
                 },
-
                 "Subnet": {
                     "default": "Subnet"
                 },
-                "LinuxSSHPort": {
-                    "default": "Linux SSH Port"
-                },
-                "LinuxVNCPort": {
-                    "default": "Linux VNC Port"
+                "WindowsRDPPort": {
+                    "default": "Windows VNC Port"
                 },
                 "LatestAmiId": {
-                    "default": "SSM key to the latest Amazon linux AMI"
+                    "default": "SSM key to the latest Microsoft Windows Server 2019 AMI"
                 }
             }
         }
@@ -111,11 +106,11 @@
         },
         "Subnet": {
             "Type": "AWS::EC2::Subnet::Id",
-            "Description": "Select subnet for Linux Instance",
+            "Description": "Select subnet for Windows Instance",
             "ConstraintDescription": "must be an existing subnet"
         },
         "RemoteAccessCIDR": {
-            "Description": "CIDR block to allow access to linux instances",
+            "Description": "CIDR block to allow access to Windows instances",
             "Type": "String",
             "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
             "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
@@ -135,7 +130,7 @@
                 "g4dn.xlarge"
             ],
             "Default": "t3.micro",
-            "Description": "Amazon EC2 Linux Instance Type",
+            "Description": "Amazon EC2 Windows Instance Type",
             "Type": "String"
         },
         "InstanceOverride1": {
@@ -153,7 +148,7 @@
                 "g4dn.xlarge"
             ],
             "Default": "t3.micro",
-            "Description": "Amazon EC2 Linux Instance Type",
+            "Description": "Amazon EC2 Windows Instance Type",
             "Type": "String"
         },
         "InstanceOverride2": {
@@ -171,7 +166,7 @@
                 "g4dn.xlarge"
             ],
             "Default": "t2.medium",
-            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Description": "Amazon EC2 Spot Windows Instance Type Override",
             "Type": "String"
         },
         "InstanceOverride3": {
@@ -189,7 +184,7 @@
                 "g4dn.xlarge"
             ],
             "Default": "t3.medium",
-            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Description": "Amazon EC2 Spot Windows Instance Type Override",
             "Type": "String"
         },
         "InstanceOverride4": {
@@ -207,7 +202,7 @@
                 "g4dn.xlarge"
             ],
             "Default": "t2.large",
-            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Description": "Amazon EC2 Spot Windows Instance Type Override",
             "Type": "String"
         },
         "InstanceOverride5": {
@@ -225,34 +220,27 @@
                 "g4dn.xlarge"
             ],
             "Default": "t3.large",
-            "Description": "Amazon EC2 Spot Linux Instance Type Override",
+            "Description": "Amazon EC2 Spot Windows Instance Type Override",
             "Type": "String"
         },
-        "LinuxSSHPort": {
-            "Description": "Linux SSH Port Number",
+        "WindowsRDPPort": {
+            "Description": "Windows RDP Port Number",
             "Type": "Number",
-            "Default": 22,
-            "ConstraintDescription": "must be 22 or a number from 1024 to 65535"
-        },
-        "LinuxVNCPort": {
-            "Description": "Linux VNC Port Number",
-            "Type": "Number",
-            "Default": 5901,
+            "Default": 3389,
             "ConstraintDescription": "must be a number from 1024 to 65535"
         },
         "UserData": {
-          "Description": "Script to prepare instance lab",
-          "Type": "String",
-          "Default": "s3://firetvuserdatascripts/linux-user-data.sh"
+          "Description": "Userdata url script to prepare instance lab",
+          "Type": "String"
         },
 
         "KeyPair": {
-            "Description": "Name of existing EC2 key pair for Linux Instances",
+            "Description": "Name of existing EC2 key pair for Windows Instances",
             "Type": "AWS::EC2::KeyPair::KeyName"
         },
         "LatestAmiId": {
             "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
-            "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+            "Default": "/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base"
         },
         "S3TemplateBucketName": {
             "Type": "String",
@@ -335,35 +323,22 @@
                   ]
                 }
             },
-        "LinuxSecurityGroup": {
+        "WindowsSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Enables SSH Access to Linux EC2 Instance",
+                "GroupDescription": "Enables RDP Access to Windows EC2 Instance",
                 "VpcId": {
                     "Ref": "VPC"
                 },
                 "SecurityGroupIngress": [
                     {
-                        "Description":"allow SSH",
+                        "Description":"allow RDP",
                         "IpProtocol": "tcp",
                         "FromPort": {
-                            "Ref": "LinuxSSHPort"
+                            "Ref": "WindowsRDPPort"
                         },
                         "ToPort": {
-                            "Ref": "LinuxSSHPort"
-                        },
-                        "CidrIp": {
-                            "Ref": "RemoteAccessCIDR"
-                        }
-                    },
-                    {
-                        "Description":"allow VNC",
-                        "IpProtocol": "tcp",
-                        "FromPort": {
-                            "Ref": "LinuxVNCPort"
-                        },
-                        "ToPort": {
-                            "Ref": "LinuxVNCPort"
+                            "Ref": "WindowsRDPPort"
                         },
                         "CidrIp": {
                             "Ref": "RemoteAccessCIDR"
@@ -388,7 +363,7 @@
                 ]
             }
         },
-        "LinuxFleet": {
+        "WidowsFleet": {
           "Type": "AWS::EC2::EC2Fleet",
           "Properties" : {
             "Type": "instant",
@@ -400,7 +375,7 @@
               { "LaunchTemplateSpecification":
                 {
                    "Version": "$Latest",
-                   "LaunchTemplateId": { "Ref": "LinuxInstance" }
+                   "LaunchTemplateId": { "Ref": "WindowsInstance" }
                 },
                 "Overrides":[
                     {
@@ -437,7 +412,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": {"Fn::Sub":"Linux-${AWS::StackName}"}
+                        "Value": {"Fn::Sub":"Windows-Spot-${AWS::StackName}"}
                     },
                     {
                       "Key": "Parent",
@@ -451,7 +426,7 @@
                     },
                     {
                         "Key": "ConnectionProtocol",
-                        "Value": "VNC"
+                        "Value": "RDP"
                     }
               ]
             }
@@ -459,7 +434,7 @@
           }
         },
 
-        "LinuxInstance": {
+        "WindowsInstance": {
             "Type": "AWS::EC2::LaunchTemplate",
             "Properties": {
                 "LaunchTemplateData": {
@@ -482,7 +457,7 @@
                        },
                        "Groups": [
                            {
-                               "Ref": "LinuxSecurityGroup"
+                               "Ref": "WindowsSecurityGroup"
                            }
                        ]
                      }
@@ -505,14 +480,12 @@
                     "UserData": {
                         "Fn::Base64": {
                           "Fn::Join": [ "", [
-                            "#!/bin/bash\n",
-                            "/usr/bin/aws s3 cp ",
-                            {
-                              "Ref": "UserData"
-                            },
-                            " /home/ec2-user/.\n",
-                            "chmod 777 /home/ec2-user/linux-user-data.sh\n",
-                            "/home/ec2-user/linux-user-data.sh\n"
+                            "<script>\n",
+                              "net user /add developer ",
+                              "{{resolve:ssm-secure:developerUserPassword:1}}",
+                              "\n",
+                              "net localgroup administrators developer /add\n",
+                            "</script>"
                             ]]
                           }
                         }
@@ -532,11 +505,6 @@
         "KeyPair": {
             "Value": {
                 "Ref": "KeyPair"
-            }
-        },
-        "LinuxSSHPort": {
-            "Value": {
-                "Ref": "LinuxSSHPort"
             }
         },
         "Subnet": {

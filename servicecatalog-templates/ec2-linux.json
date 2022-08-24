@@ -11,7 +11,8 @@
                   "Parameters": [
                       "Quantity",
                       "GuacamoleParent",
-                      "UserData"
+                      "UserData",
+                      "S3TemplateBucketName"
                   ]
               },
                 {
@@ -53,6 +54,9 @@
                 },
                 "RemoteAccessCIDR": {
                     "default": "Remote Access CIDR Block"
+                },
+                "S3TemplateBucketName": {
+                  "default": "S3 bucket name with templates"
                 },
                 "InstanceType": {
                     "default": "Instance Type"
@@ -143,6 +147,10 @@
         "LatestAmiId": {
             "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
             "Default": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+        },
+        "S3TemplateBucketName": {
+            "Type": "String",
+            "Description": "S3 bucket name with the Template files"
         }
     },
     "Resources": {
@@ -187,19 +195,21 @@
                 {
                   "Effect": "Allow",
                   "Action": [
-                    "s3:ListBucket"
-                  ],
-                 "Resource": [
-                    "arn:aws:s3:::firetvuserdatascripts"
-                  ]
-                },
-                {
-                  "Effect": "Allow",
-                  "Action": [
+                    "s3:ListBucket",
                     "s3:GetObject"
                   ],
-                  "Resource": [
-                     "arn:aws:s3:::firetvuserdatascripts/*"
+                 "Resource": [
+                   "Fn::Join": [ "", [
+                        "arn:aws:s3:::",
+                        {"Ref": "S3TemplateBucketName"}
+                      ]
+                    ],
+                    "Fn::Join": [ "", [
+                         "arn:aws:s3:::",
+                         {"Ref": "S3TemplateBucketName"},
+                         "/*"
+                       ]
+                     ]
                   ]
                 }
               ]
