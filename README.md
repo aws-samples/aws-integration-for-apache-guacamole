@@ -30,8 +30,9 @@ You will need:
   e) configure a target group point to Guacamole instances<br>
   f) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
-3. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
-4. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
+3. Create SSM secure Parameters with guacamole api password and windows user passwords
+4. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
+5. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
 
 ## Security
