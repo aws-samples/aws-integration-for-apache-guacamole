@@ -565,7 +565,8 @@ Resources:
           port: !Ref GuacamolePort
           path: !Ref GuacamolePath
           username: !Ref GuacamoleUsername
-          password: !Ref WindowsSSMParameterPasswordKey
+          password: guacaApiPassword
+          connectiopasswordkey: !Ref WindowsSSMParameterPasswordKey
       Handler: index.handler
       Timeout: 15
       Role: !GetAtt
@@ -589,6 +590,7 @@ Resources:
           var parent = '';
           var connectionType = '';
           var result = '';
+          var connectionPassword = '';
 
           function getInstanceDetails() {
                var params = {
@@ -630,7 +632,24 @@ Resources:
                  });
                });
           }
-
+          function getConnectionPassword() {
+              var params = {
+                Name: process.env.connectiopasswordkey,
+                WithDecryption: true
+              };
+              return new Promise((resolve) => {
+                ssm.getParameter(params, function(err, data) {
+                  if (err) {
+                    console.log(err, err.stack);
+                  } else {
+                    connectionPassword = data.Parameter.Value;
+                    resolve(connectionPassword);
+                  }
+                }
+               );
+              }
+              );
+          }
           function getCredentials() {
               var params = {
                 Name: process.env.password,
@@ -701,7 +720,7 @@ Resources:
                       "port": "5901",
                       "cursor": "Local",
                       "enable-sftp": "false",
-                      "password": password,
+                      "password": connectionPassword,
                       "hostname": instanceDetails.PrivateIpAddress
                   },
                   "attributes": {
@@ -719,7 +738,7 @@ Resources:
                       "cursor": "Local",
                       "enable-sftp": "false",
                       "username": "developer",
-                      "password": password,
+                      "password": connectionPassword,
                       "hostname": instanceDetails.PrivateIpAddress,
                       "ignore-cert": "true",
                       "width": "1280",
@@ -774,6 +793,7 @@ Resources:
 
               instanceId = event.detail["instance-id"];
               await getCredentials();
+              await getConnectionPassword();
               guacaSession = await getToken(password);
               instanceDetails = await getInstanceDetails();
 
