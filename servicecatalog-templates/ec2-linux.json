@@ -368,7 +368,7 @@
                           "Fn::Join": [ "", [
                             "#!/bin/bash\n",
                             "/usr/bin/aws s3 cp https://suapservicecatalogtemplates.s3.sa-east-1.amazonaws.com/linux-user-data.sh /home/ec2-user/.\n",
-                            "chmod 777 /home/ec2-user/linux-user-data.sh\n",
+                            "chmod 777 /home/ec2-user/linux-user-data.sh developerUserPassword\n",
                             "/home/ec2-user/linux-user-data.sh\n"
                             ]]
                           }
