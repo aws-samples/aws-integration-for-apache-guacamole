@@ -199,17 +199,18 @@
                     "s3:GetObject"
                   ],
                  "Resource": [
-                   "Fn::Join": [ "", [
+                   { "Fn::Join": [ "", [
                         "arn:aws:s3:::",
                         {"Ref": "S3TemplateBucketName"}
                       ]
-                    ],
+                    ] }, {
                     "Fn::Join": [ "", [
                          "arn:aws:s3:::",
                          {"Ref": "S3TemplateBucketName"},
                          "/*"
                        ]
                      ]
+                   }
                   ]
                 }
               ]
