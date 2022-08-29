@@ -340,11 +340,14 @@
                         "Fn::Base64": {
                           "Fn::Join": [ "", [
                             "<script>\n",
-                              "net user /add developer ",
-                              "{{resolve:ssm-secure:developerUserPassword:1}}",
-                              "\n",
-                              "net localgroup administrators developer /add\n",
-                            "</script>"
+                              "msiexec.exe /quiet /i https://awscli.amazonaws.com/AWSCLIV2.msi \n",
+                              " \"C:\\Program Files\\Amazon\\AWSCLIV2\\aws.exe\" s3 cp ",
+                              {
+                                "Ref": "UserData"
+                              },
+                              " C:\\Users\\Administrator \n",
+                              "powershell -file C:\\Users\\Administrator\\windows-user-data.ps1 developerUserPassword \n",
+                               "</script>\n"
                             ]]
                           }
                         }
