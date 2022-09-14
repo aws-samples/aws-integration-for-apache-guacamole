@@ -16,7 +16,7 @@ You will need:
 
 - VPC with one public subnet and one or two private subnets, a NAT Gateway and/or Proxy or the AWS Network Firewall
 - Apache Guacamole installed
-- Guacamole API Credentials
+- Guacamole API Credentials (User and Password)
 - S3 Bucket shared with the Organization or Account with the AWS Service Catalog Products
 - A domain or subdomain
 
@@ -25,14 +25,16 @@ You will need:
 1. Apache Guacamole setup:<br>
   a) install Guacamole in EC2 instances or ECS/Fargate containers<br>
   b) configure a domain or subdomain in the Route53 or your DNS <br>
-  c) configure the domain and validate in ACM - Amazon Certificate Manager<br>
-  d) setup ALB to listen in 443 port and attach the Certificate from ACM<br>
-  e) configure a target group point to Guacamole instances<br>
-  f) create a Guacamole API user <br>
+  c) In the ACM - Amazon Certificate Manager configure the domain/subdomain and validate it in the Route 53/DNS <br>
+  d) Create a target group in the 8080 port with the Apache Guacamole instances or ECS cluster<br>
+  e) setup ALB to listen in 443 port, attach the Certificate from ACM and the target group<br>
+  g) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
-3. Create SSM secure Parameters with guacamole api password and windows user passwords
-4. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
-5. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
+3. Create two SSM secure Parameters (SecureString with default account KMS key) 
+  a) "guacaApiPassword" with the Apache Guacamole API password 
+  b) "developerUserPassword" with a MS Windows password
+5. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
+6. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
 
 ## Security
