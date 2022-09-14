@@ -19,12 +19,10 @@ Parameters:
     Type: String
     Description: The Apache Guacamole API username.
 
-  GuacaApiPassword:
-    NoEcho: true
+  GuacaApiSSMParameterPasswordKey:
     Type: String
-    MinLength: 8
-    MaxLength: 41
     Description: The Apache Guacamole API Password.
+    Default: guacaApiPassword
 
   LinuxS3UrlTemplate:
     Type: String
@@ -39,6 +37,7 @@ Parameters:
   WindowsSSMParameterPasswordKey:
     Type: String
     Description: The Windows parameter key with the Developer user password.
+    Default: developerUserPassword
 
 
 Resources:
@@ -276,7 +275,7 @@ Resources:
           port: !Ref GuacamolePort
           path: !Ref GuacamolePath
           username: !Ref GuacamoleUsername
-          password: !Ref GuacaApiPassword
+          password: !Ref GuacaApiSSMParameterPasswordKey
           connectionpasswordkey: !Ref WindowsSSMParameterPasswordKey
       Handler: index.handler
       Timeout: 15
@@ -554,7 +553,7 @@ Resources:
           port: !Ref GuacamolePort
           path: !Ref GuacamolePath
           username: !Ref GuacamoleUsername
-          password: guacaApiPassword
+          password: !Ref GuacaApiSSMParameterPasswordKey
       Handler: index.handler
       Timeout: 15
       Role: !GetAtt
