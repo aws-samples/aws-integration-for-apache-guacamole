@@ -30,9 +30,9 @@ You will need:
   e) setup ALB to listen in 443 port, attach the Certificate from ACM and the target group<br>
   g) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
-3. Create two SSM secure Parameters (SecureString with default account KMS key) 
-  a) "guacaApiPassword" with the Apache Guacamole API password 
-  b) "developerUserPassword" with a MS Windows password
+3. Create two SSM secure Parameters (SecureString with default account KMS key)<br>
+  a) "guacaApiPassword" with the Apache Guacamole API password <br>
+  b) "developerUserPassword" with a MS Windows password<br>
 5. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
 6. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
