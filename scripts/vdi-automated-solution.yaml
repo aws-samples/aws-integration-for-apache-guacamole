@@ -783,7 +783,7 @@ Resources:
       Distributor: "Amazon"
       Name: "Amazon Elastic Compute Cloud (EC2) Linux"
       Owner: "IT Services"
-      SupportEmail: "support@octank.edu.br"
+      SupportEmail: !Ref ItEmailTeam
       SupportUrl: "https://www.amazon.com"
       SupportDescription: "Support Description"
       ProvisioningArtifactParameters:
@@ -808,7 +808,7 @@ Resources:
       Distributor: "Amazon"
       Name: "Amazon Elastic Compute Cloud (EC2) Windows"
       Owner: "IT Services"
-      SupportEmail: "support@bunge.com"
+      SupportEmail: !Ref ItEmailTeam
       SupportUrl: "https://www.amazon.com"
       SupportDescription: "Support Description"
       ProvisioningArtifactParameters:
