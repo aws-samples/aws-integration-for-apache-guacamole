@@ -32,7 +32,33 @@ def event_bridge_permissions(rolename='EventBridgeLambdaPermission'):
     )
 
 
-def add_schedule(id, lambda_name, lambda_arn, role_name, expression, provisioning_parameters):
+def add_schedule(id, lambda_name, lambda_arn, role_name):
+    # CRON expression
+    # Minute Hour Day Month WeekDay Year
+    expression = "cron(10 10 10 10 ? 2022)"
+
+    #JSON WITH PARAMETER TO PROVISIONING THE SERVICE CATALOG PRODUCT
+    provisioning_parameters = {
+      "ProvisionedProductName": "A_UNIQUE_NAME",
+      "ProductId": "prod-########",
+      "ArtifactId": "pa-#########",
+      "InstanceType": "t2.micro",
+      "Quantity": "5",
+      "GuacamoleParent": "1",
+      "UserData": "s3://S3_BUCKET_NAME/linux-user-data.sh",
+      "KeyPair": "A_KEY_PAR",
+      "RemoteAccessCIDR": "172.31.0.0/20",
+      "VPC": "vpc-########",
+      "Subnet": "subnet-#########",
+      "InstanceOverride1": "t3.medium",
+      "InstanceOverride2": "t3.small",
+      "InstanceOverride3": "t3.large",
+      "InstanceOverride4": "t2.small",
+      "InstanceOverride5": "t2.medium",
+      "Users": "",
+      "S3TemplateBucketName": "S3_BUCKET_NAME"
+    }
+
     iam_client = boto3.client('iam')
     client = boto3.client('events')
     lambda_client = boto3.client('lambda')
