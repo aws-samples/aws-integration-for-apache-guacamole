@@ -10,8 +10,6 @@ This sample is an AWS automation to integrate with Apache Guacamole using Eventb
 
 ## Requirements
 
-This demo is configured to run in `sa-east-1`. If you need to run it in a different region, edit the `AWS_REGION` variable in all the scripts.
-
 You will need:
 
 - VPC with one public subnet and one or two private subnets, a NAT Gateway and/or Proxy or the AWS Network Firewall
