@@ -39,6 +39,9 @@ Parameters:
     Description: The Windows parameter key with the Developer user password.
     Default: developerUserPassword
 
+  ItEmailTeam:
+    Type: String
+    Description: The email of IT Staff to receive notifications
 
 Resources:
 
@@ -933,7 +936,7 @@ Resources:
   EngineeringSubscription:
     Type: "AWS::SNS::Subscription"
     Properties:
-      Endpoint: "scandura+infra@amazon.com"
+      Endpoint: !Ref ItEmailTeam
       Protocol: "email"
       TopicArn: !Ref EngineeringCreatedTopic
   LinuxCreatedLaunchNotification:
