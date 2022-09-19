@@ -486,7 +486,9 @@
                                 "Ref": "UserData"
                               },
                               " C:\\Users\\Administrator \n",
-                              "powershell -file C:\\Users\\Administrator\\windows-user-data.ps1 developerUserPassword \n",
+                              "powershell -file C:\\Users\\Administrator\\windows-user-data.ps1 developerUserPassword ",
+                              { "Ref" : "AWS::Region" },
+                              "\n",
                                "</script>\n"
                             ]]
                           }

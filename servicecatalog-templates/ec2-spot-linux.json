@@ -513,8 +513,8 @@
                             },
                             " /home/ec2-user/.\n",
                             "chmod 777 /home/ec2-user/linux-user-data.sh\n",
-                            "/home/ec2-user/linux-user-data.sh ",
-                            "developerUserPassword",
+                            "/home/ec2-user/linux-user-data.sh developerUserPassword ",
+                            { "Ref" : "AWS::Region" },
                             "\n"
                             ]]
                           }

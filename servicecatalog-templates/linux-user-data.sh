@@ -1,6 +1,6 @@
 #!/bin/bash
 
-secret=$(aws ssm get-parameter --name "$1" --region sa-east-1 --with-decryption --query "Parameter.Value" --output text)
+secret=$(aws ssm get-parameter --name "$1" --region "$2" --with-decryption --query "Parameter.Value" --output text)
 
 yum update -y
 amazon-linux-extras install mate-desktop1.x
