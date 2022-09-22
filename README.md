@@ -34,6 +34,15 @@ You will need:
 5. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
 6. Now just scheduele an Eventbridge Rule with a target to Lambda functions to **create (CreateProductScheduledbyEventBridge)** and **Remove (DeleteProductScheduledbyEventBridge)** Service Catalog products. Here you can find a python sample to create the Eventbridge Rules [sample here](eventbridge-integration) 
 
+### Multi-Account Environment
+
+There are aways to work in a multi-account environment, for example, using CloudFormation StackSet, creating Eventbridge Rules in each account, etc. But we tested one solution using the SNS Topic in the managemnent account as a EventBridge Rule Target and subscribe the provisioning Lambda functions in the child accounts.<br>
+
+1. Read and follow this documentation https://docs.aws.amazon.com/lambda/latest/dg/with-sns-example.html<br>
+2. Create the SNS Topic (account A)<br>
+3. Create the lambda function (account B)<br>
+4. Create cross-acount roles<br>
+5. From the LMS Create the EnventBridge Rule with the SNS Topic as a target<br>
 
 ## Security
 
