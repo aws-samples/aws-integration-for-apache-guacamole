@@ -106,7 +106,7 @@ Resources:
               - CreateGuacamoleConnection
               - Arn
           Id: "CreateGuacamoleConnectionV1"
-  PermissionForEventsToInvokeLambda:
+  PermissionForEventsToInvokeLambdaCreate:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName:
@@ -140,7 +140,7 @@ Resources:
               - DeleteGuacamoleConnection
               - Arn
           Id: "DeleteGuacamoleConnectionV1"
-  PermissionForEventsToInvokeLambda:
+  PermissionForEventsToInvokeLambdaDelete:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName:
