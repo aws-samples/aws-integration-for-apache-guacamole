@@ -42,6 +42,10 @@ Parameters:
   ItEmailTeam:
     Type: String
     Description: The email of IT Staff to receive notifications
+    
+  KmsMaterKeyId:
+    Type: String
+    Description: KMS Key
 
 Resources:
 
@@ -931,7 +935,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "Engineering Product Created"
-##      KmsMasterKeyId: !Ref KmsMaterKeyId
+      KmsMasterKeyId: !Ref KmsMaterKeyId
 
   EngineeringSubscription:
     Type: "AWS::SNS::Subscription"
