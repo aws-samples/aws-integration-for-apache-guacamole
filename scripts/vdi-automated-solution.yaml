@@ -13,7 +13,7 @@ Parameters:
   GuacamolePort:
     Type: Number
     Description: The Apache Guacamole port.
-    Default: 8080
+    Default: 443
 
   GuacamoleUsername:
     Type: String
@@ -42,14 +42,8 @@ Parameters:
   ItEmailTeam:
     Type: String
     Description: The email of IT Staff to receive notifications
-    
-  KmsMaterKeyId:
-    Type: String
-    Description: KMS Key
 
 Resources:
-
-
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -935,7 +929,7 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "Engineering Product Created"
-      KmsMasterKeyId: !Ref KmsMaterKeyId
+      KmsMasterKeyId: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/sns"
 
   EngineeringSubscription:
     Type: "AWS::SNS::Subscription"
