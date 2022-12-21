@@ -28,7 +28,7 @@ You will need:
   e) setup ALB to listen in 443 port, attach the Certificate from ACM and the target group<br>
   g) create a Guacamole API user <br>
 2. Create S3 BUCKET to save [Service Catalog Templates files and the Userdata scripts](servicecatalog-templates)
-3. Create two SSM secure Parameters (SecureString with default account KMS key)<br>
+3. Create two secure Parameters (SecureString with default account KMS key) inside the AWS System Manager<br>
   a) "guacaApiPassword" with the Apache Guacamole API password <br>
   b) "developerUserPassword" with a MS Windows password<br>
 5. Run the solution [cloudformation script vdi-automated-solution.yaml](scripts)
